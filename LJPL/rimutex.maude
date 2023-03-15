@@ -133,7 +133,7 @@ fmod CONFIG is
                    (v[4]: 2,running,oo,oo) } .
 endfm
 
-mod IMUTEX is
+mod RIMUTEX is
   inc CONFIG .
   vars T T' T'' T2 T2' T3 T3' VI VI' VI'' : Nat .
   vars LI LI' LI'' LI1 LI2 LI3 LI4 LI5 LI6 LI7 : Nat .
@@ -217,11 +217,11 @@ rewrite init .
 
 The command counts the number of reachable states from init:
 
-search [1] in IMUTEX : init =>* {OCs}  such that false .
+search [1] in RIMUTEX : init =>* {OCs}  such that false .
 
 The command finds a state such that all vehicles have passed the intersection:
 
-search [1] in IMUTEX : init =>* {(gstat: fin) OCs} .
+search [1] in RIMUTEX : init =>* {(gstat: fin) OCs} .
 
 and the command shows the computation from the initial state to the state:
 
@@ -230,23 +230,23 @@ show path 1395 .
 The two commands check if the protocol enjoys the (revised) mutual excclusion
 property:
 
-search [1] in IMUTEX : init
+search [1] in RIMUTEX : init
   =>* {(v[VI]: LI,crossing,T,T') (v[VI']: LI',crossing,T2,T2') OCs}
   such that areConflict(LI,LI') .
-search [1] in IMUTEX : init
+search [1] in RIMUTEX : init
   =>* {(v[VI]: LI,crossing,T,T') (v[VI']: LI',crossing,T2,T2') (v[VI'']: LI'',crossing,T3,T3') OCs}
   such that areConcur(LI,LI') /\ areConcur(LI,LI'') /\ (LI =/= LI') /\ (LI =/= LI'') /\ (LI' =/= LI'') .
 
 The command find a deadlock state:
 
-search [1] in IMUTEX : init =>! {OCs} .
+search [1] in RIMUTEX : init =>! {OCs} .
 
 )***
 
 in model-checker .
 
 mod RIMUTEX-PREDS is
-  pr IMUTEX .
+  pr RIMUTEX .
   inc SATISFACTION .
   subsort Config < State .
   ops fin : -> Prop .
