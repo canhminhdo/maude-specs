@@ -21,12 +21,12 @@ fmod NAT+INF is
   ceq areConflict(N,N') = (N' rem 8) == ((N + 2) rem 8) or
                                            (N' rem 8) == ((N + 5) rem 8) or
                                            (N' rem 8) == ((N + 6) rem 8) or
-                                           (N' rem 8) == ((N + 7) rem 8) 
+                                           (N' rem 8) == ((N + 7) rem 8)
   if isEven(N) .
   ceq areConflict(N,N') = (N' rem 8) == ((N + 1) rem 8) or
                                            (N' rem 8) == ((N + 2) rem 8) or
                                            (N' rem 8) == ((N + 3) rem 8) or
-                                           (N' rem 8) == ((N + 6) rem 8) 
+                                           (N' rem 8) == ((N + 6) rem 8)
   if isOdd(N) .
   eq areConcur(N,N') = not areConflict(N,N') .
 endfm
@@ -116,17 +116,17 @@ fmod CONFIG is
   op {_} : Soup{OComp} -> Config [ctor] .
   op init : -> Config .
   eq init = {(gstat: nFin) (clock: 0,false)
-                   (lane[0]: oo) (lane[1]: oo) (lane[2]: oo) (lane[3]: oo) 
+                   (lane[0]: oo) (lane[1]: oo) (lane[2]: oo) (lane[3]: oo)
                    (lane[4]: oo) (lane[5]: oo) (lane[6]: oo) (lane[7]: oo)
-                   (v[oo]: 0,stopped,oo,oo) (v[oo]: 1,stopped,oo,oo) 
-                   (v[oo]: 2,stopped,oo,oo) (v[oo]: 3,stopped,oo,oo) 
-                   (v[oo]: 4,stopped,oo,oo) (v[oo]: 5,stopped,oo,oo) 
-                   (v[oo]: 6,stopped,oo,oo) (v[oo]: 7,stopped,oo,oo) 
-                   (v[0]: 0,running,oo,oo) (v[1]: 0,running,oo,oo) 
-                   (v[2]: 1,running,oo,oo) (v[3]: 5,running,oo,oo) 
-                   (v[4]: 5,running,oo,oo) 
-                   (v[7]: 2,running,oo,oo) (v[9]: 4,running,oo,oo) 
-                   (v[10]: 5,running,oo,oo) (v[11]: 6,running,oo,oo) 
+                   (v[oo]: 0,stopped,oo,oo) (v[oo]: 1,stopped,oo,oo)
+                   (v[oo]: 2,stopped,oo,oo) (v[oo]: 3,stopped,oo,oo)
+                   (v[oo]: 4,stopped,oo,oo) (v[oo]: 5,stopped,oo,oo)
+                   (v[oo]: 6,stopped,oo,oo) (v[oo]: 7,stopped,oo,oo)
+                   (v[0]: 0,running,oo,oo) (v[1]: 0,running,oo,oo)
+                   (v[2]: 1,running,oo,oo) (v[3]: 5,running,oo,oo)
+                   (v[4]: 5,running,oo,oo)
+                   (v[7]: 2,running,oo,oo) (v[9]: 4,running,oo,oo)
+                   (v[10]: 5,running,oo,oo) (v[11]: 6,running,oo,oo)
                    (v[12]: 7,running,oo,oo) } .
 endfm
 
@@ -140,7 +140,7 @@ mod RIMUTEX is
   var B : Bool .
   vars VS VS' VS1 VS2 VS3 VS4 VS5 VS6 VS7 : Queue{NatInf} .
   vars OCs OCs' OCs1 OCs2 OCs3 OCs4 OCs5 OCs6 OCs7 : Soup{OComp} .
-  rl [loop] : {(gstat: fin) OCs} => {(gstat: fin) OCs} .  
+  rl [loop] : {(gstat: fin) OCs} => {(gstat: fin) OCs} .
   crl [fin] : {(gstat: nFin) OCs} => {(gstat: fin) OCs} if fin?(OCs) .
   rl [tick] : {(gstat: nFin) (clock: T,true) OCs} => {(gstat: nFin) (clock: (T + 1),false) OCs} .
   rl [approach1] : {(gstat: nFin) (clock: T,B) (lane[LI]: oo) (v[VI]: LI,running,oo,oo) OCs}
@@ -151,39 +151,39 @@ mod RIMUTEX is
     => {(gstat: nFin) (lane[LI]: (VI ; VS)) (v[VI]: LI,stopped,T,T) OCs} .
   rl [check2] : {(gstat: nFin) (lane[LI]: (VS' ; VI' ; VI ; VS)) (v[VI']: LI,stopped,T,T') (v[VI]: LI,approaching,T'',oo) OCs}
     => {(gstat: nFin) (lane[LI]: (VS' ; VI' ; VI ; VS)) (v[VI']: LI,stopped,T,T') (v[VI]: LI,stopped,T'',T') OCs} .
-  rl [check3] : {(gstat: nFin) (lane[LI]: (VS' ; VI' ; VI ; VS)) (v[VI']: LI,crossing,T,T') (v[VI]: LI,approaching,T'',oo) OCs} 
+  rl [check3] : {(gstat: nFin) (lane[LI]: (VS' ; VI' ; VI ; VS)) (v[VI']: LI,crossing,T,T') (v[VI]: LI,approaching,T'',oo) OCs}
     => {(gstat: nFin) (lane[LI]: (VS' ; VI' ; VI ; VS)) (v[VI']: LI,crossing,T,T') (v[VI]: LI,stopped,T'',T'') OCs} .
   crl [enter1] : {(gstat: nFin) (lane[LI]: (VI ; VS)) (v[VI]: LI,stopped,T,T) OCs}
     => {(gstat: nFin) (lane[LI]: (VI ; VS)) (v[VI]: LI,crossing,T,T) OCs'}
-    if isEven(LI) /\ 
-        LI1 := (LI + 2) rem 8 /\ 
-        (lane[LI1]: (VI1 ; VS1)) (v[VI1]: LI1,VSt1,T11,T12) OCs1 := OCs /\ 
-        VSt1 = stopped /\ (T < T12 or (T == T12 and LI < LI1)) /\ 
+    if isEven(LI) /\
+        LI1 := (LI + 2) rem 8 /\
+        (lane[LI1]: (VI1 ; VS1)) (v[VI1]: LI1,VSt1,T11,T12) OCs1 := OCs /\
+        VSt1 = stopped /\ (T < T12 or (T == T12 and LI < LI1)) /\
         LI2 := (LI + 5) rem 8 /\
         (lane[LI2]: (VI2 ; VS2)) (v[VI2]: LI2,VSt2,T21,T22) OCs2 := OCs /\
-        VSt2 = stopped /\ (T < T22  or (T == T22 and LI < LI2)) /\ 
+        VSt2 = stopped /\ (T < T22  or (T == T22 and LI < LI2)) /\
         LI3 := (LI + 6) rem 8 /\
         (lane[LI3]: (VI3 ; VS3)) (v[VI3]: LI3,VSt3,T31,T32) OCs3 := OCs /\
-        VSt3 = stopped /\ (T < T32 or (T == T32 and LI < LI3))  /\ 
+        VSt3 = stopped /\ (T < T32 or (T == T32 and LI < LI3))  /\
         LI4 := (LI + 7) rem 8 /\
         (lane[LI4]: (VI4 ; VS4)) (v[VI4]: LI4,VSt4,T41,T42) OCs4 := OCs /\
-        VSt4 = stopped /\ (T < T42  or (T == T42 and LI < LI4)) /\ 
+        VSt4 = stopped /\ (T < T42  or (T == T42 and LI < LI4)) /\
         OCs' := letCross(VS,OCs) .
   crl [enter2] : {(gstat: nFin) (lane[LI]: (VI ; VS)) (v[VI]: LI,stopped,T,T) OCs}
     => {(gstat: nFin) (lane[LI]: (VI ; VS)) (v[VI]: LI,crossing,T,T) OCs'}
-    if isOdd(LI) /\ 
-        LI1 := (LI + 1) rem 8 /\ 
-        (lane[LI1]: (VI1 ; VS1)) (v[VI1]: LI1,VSt1,T11,T12) OCs1 := OCs /\ 
-        VSt1 = stopped /\ (T < T12 or (T == T12 and LI < LI1)) /\ 
+    if isOdd(LI) /\
+        LI1 := (LI + 1) rem 8 /\
+        (lane[LI1]: (VI1 ; VS1)) (v[VI1]: LI1,VSt1,T11,T12) OCs1 := OCs /\
+        VSt1 = stopped /\ (T < T12 or (T == T12 and LI < LI1)) /\
         LI2 := (LI + 2) rem 8 /\
         (lane[LI2]: (VI2 ; VS2)) (v[VI2]: LI2,VSt2,T21,T22) OCs2 := OCs /\
-        VSt2 = stopped /\ (T < T22  or (T == T22 and LI < LI2)) /\ 
+        VSt2 = stopped /\ (T < T22  or (T == T22 and LI < LI2)) /\
         LI3 := (LI + 3) rem 8 /\
         (lane[LI3]: (VI3 ; VS3)) (v[VI3]: LI3,VSt3,T31,T32) OCs3 := OCs /\
-        VSt3 = stopped /\ (T < T32 or (T == T32 and LI < LI3)) /\ 
+        VSt3 = stopped /\ (T < T32 or (T == T32 and LI < LI3)) /\
         LI4 := (LI + 6) rem 8 /\
         (lane[LI4]: (VI4 ; VS4)) (v[VI4]: LI4,VSt4,T41,T42) OCs4 := OCs /\
-        VSt4 = stopped /\ (T < T42  or (T == T42 and LI < LI4)) /\ 
+        VSt4 = stopped /\ (T < T42  or (T == T42 and LI < LI4)) /\
         OCs' := letCross(VS,OCs) .
   rl [leave1] : {(gstat: nFin) (lane[LI]: VI) (v[VI]: LI,crossing,T,T') OCs}
     => {(gstat: nFin) (lane[LI]: oo) (v[VI]: LI,crossed,T,T') OCs} .
@@ -247,4 +247,3 @@ The command checks if all vehicles will eventually cross the intersection:
 
 red in RIMUTEX-CHECK : modelCheck(init,halt) .
 )***
-
