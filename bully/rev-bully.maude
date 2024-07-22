@@ -346,6 +346,9 @@ mod BULLY-CHECK is
 
 endm
 
+
+eof
+
 search [1] in BULLY : init2 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
 red in BULLY-CHECK : modelCheck(init2, leaderLiveness2-2) .
 

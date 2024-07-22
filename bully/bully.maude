@@ -284,6 +284,10 @@ mod BULLY-CHECK is
                        (~ [] <> applied(bi(3))) /\ (~ [] <> applied(bi(4))) /\ (~ [] <> applied(bi(5))) .
 endm
 
+
+eof
+
+
 search [1] in BULLY : init2 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
 red in BULLY-CHECK : modelCheck(init2, afair2 -> leaderLiveness2) .
 
