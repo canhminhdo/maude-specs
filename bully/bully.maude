@@ -1,0 +1,327 @@
+fmod SOUP{X :: TRIV} is
+  sort Soup{X} .
+  subsort X$Elt < Soup{X} .
+  op empty : -> Soup{X} [ctor] .
+  op __ : Soup{X} Soup{X} -> Soup{X} [ctor assoc comm id: empty] .
+endfm
+
+fmod PROC-STATE is
+  sort ProcState .
+  sorts Leader Normal Initiator FailedLeader .
+  subsorts Leader Normal Initiator FailedLeader < ProcState .
+  op leader : -> Leader [ctor] .
+  op normal : -> Normal [ctor] .
+  op initiator : -> Initiator [ctor] .
+  op failedLeader : -> FailedLeader [ctor] .
+endfm
+
+fmod MESSAGE-TYPE is
+  sort MessageType .
+  sorts Election Ok Timeout .
+  subsorts Election Ok Timeout < MessageType .
+  op election : -> Election [ctor] .
+  op ok : -> Ok [ctor] .
+  op timeout : -> Timeout [ctor] .
+endfm
+
+fmod MESSAGE is
+  pr NAT .
+  pr MESSAGE-TYPE .
+  sort Message .
+  op message : Nat Nat Election -> Message [ctor] .
+  op message : Nat Nat Ok -> Message [ctor] .
+  op message : Nat Nat Timeout -> Message [ctor] .
+endfm
+
+view Message from TRIV to MESSAGE is
+  sort Elt to Message .
+endv
+
+fmod PROC-IDS is
+  pr SET{Nat} .
+  vars N N0 N1 : Nat .
+  vars S S0 : Set{Nat} .
+  op makeBiggerThan : Nat Nat Set{Nat} -> Set{Nat} .
+  op makeBiggerThanIds : Nat Set{Nat} Set{Nat} -> Set{Nat} .
+  op biggerThanIds : Nat Set{Nat} -> Set{Nat} .
+  op makeSmallerThan : Nat Nat Set{Nat} -> Set{Nat} .
+  op makeSmallerThanIds : Nat Set{Nat} Set{Nat} -> Set{Nat} .
+  op smallerThanIds : Nat Set{Nat} -> Set{Nat} .
+  eq makeBiggerThan(N0, N1, S) = if N0 < N1 then insert(N1, S) else S fi .
+  eq makeBiggerThanIds(N0, (N, S), S0) =
+    if S == empty then makeBiggerThan(N0, N, S0) else makeBiggerThanIds(N0, S, makeBiggerThan(N0, N, S0)) fi .
+  eq biggerThanIds(N, S) = makeBiggerThanIds(N, S, empty) .
+  eq makeSmallerThan(N0, N1, S) = if N0 > N1 then insert(N1, S) else S fi .
+  eq makeSmallerThanIds(N0, (N, S), S0) =
+    if S == empty then makeSmallerThan(N0, N, S0) else makeSmallerThanIds(N0, S, makeSmallerThan(N0, N, S0)) fi .
+  eq smallerThanIds(N, S) = makeSmallerThanIds(N, S, empty) .
+endfm
+
+fmod NETWORK is
+  pr SET{Nat} .
+  pr SOUP{Message} .
+  vars FID TID : Nat .
+  var IDS : Set{Nat} .
+  op sndElectionMsgs : Nat Set{Nat} -> Soup{Message} .
+  op sndOkMsg : Nat Nat -> Soup{Message} .
+  op sndTimeoutMsg : Nat Nat -> Soup{Message} .
+  eq sndElectionMsgs(FID, empty) = empty .
+  eq sndElectionMsgs(FID, (TID, IDS)) = message(FID, TID, election) sndElectionMsgs(FID, IDS) .
+  eq sndOkMsg(FID, TID) = message(FID, TID, ok) .
+  eq sndTimeoutMsg(FID, TID) = message(FID, TID, timeout) .
+endfm
+
+fmod LABELED-EVENT is
+  pr NAT .
+  sort LabeledEvent .
+  op notran : -> LabeledEvent .
+  ops bfl bi se nee nie et iee ieo iet ibn ibl : Nat -> LabeledEvent .
+endfm
+
+fmod OCOM is
+  pr NAT .
+  pr PROC-STATE .
+  pr NETWORK .
+  pr LABELED-EVENT .
+  sort OComp .
+  op proc[_]:_ : Nat ProcState -> OComp [ctor] .
+  op curLeader[_]:_ : Nat Nat -> OComp [ctor] .
+  op sndElectionMsgCnt[_]:_ : Nat Nat -> OComp [ctor] .
+  op rcvOkMsgCnt[_]:_ : Nat Nat -> OComp [ctor] .
+  op rcvTimeoutMsgCnt[_]:_ : Nat Nat -> OComp [ctor] .
+  op procIds:_ : Set{Nat} -> OComp [ctor] .
+  op network:_ : Soup{Message} -> OComp [ctor] .
+  op tran:_ : LabeledEvent -> OComp [ctor] .
+endfm
+
+view OComp from TRIV to OCOM is
+  sort Elt to OComp .
+endv
+
+fmod INIT-STATE is
+  pr SOUP{OComp} .
+  pr OCOM .
+  pr NAT .
+  sort BState .
+  op {_} : Soup{OComp} -> BState [ctor] .
+  op node : Nat ProcState Nat -> Soup{OComp} .
+  ops init2 init3 init4 init5 init6 : -> BState .
+  vars N LN : Nat .
+  var PS : ProcState .
+  eq node(N,PS,LN) = (proc[N]: PS) (curLeader[N]: LN) (sndElectionMsgCnt[N]: 0) 
+                                         (rcvOkMsgCnt[N]: 0) (rcvTimeoutMsgCnt[N]: 0) .
+  eq init2 = {node(0,normal,1) node(1,leader,1) 
+                       (procIds: (0, 1)) (network: empty) (tran: notran)} .
+  eq init3 = {node(0,normal,2) node(1,normal,2) node(2,leader,2) 
+                       (procIds: (0, 1, 2)) (network: empty) (tran: notran)} .
+  eq init4 = {node(0,normal,3) node(1,normal,3) node(2,normal,3) node(3,leader,3) 
+                       (procIds: (0, 1, 2, 3)) (network: empty) (tran: notran)} .
+  eq init5 = {node(0,normal,4) node(1,normal,4) node(2,normal,4) node(3,normal,4) node(4,leader,4) 
+                       (procIds: (0, 1, 2, 3, 4)) (network: empty) (tran: notran)} .
+  eq init6 = {node(0,normal,5) node(1,normal,5) node(2,normal,5) node(3,normal,5) node(4,normal,5) node(5,leader,5) 
+                       (procIds: (0, 1, 2, 3, 4, 5)) (network: empty) (tran: notran)} .
+endfm
+
+mod BULLY is
+  pr PROC-IDS .
+  pr INIT-STATE .
+
+  vars S S0 S1 : Soup{OComp} .
+  vars ID LID ID0 ID1 : Nat .
+  vars SEC ROC RTC : Nat .
+  var IDS : Set{Nat} .
+  var NW : Soup{Message} .
+  var E : LabeledEvent .
+
+  op syncCurLeader : Soup{OComp} Nat -> Soup{OComp} .
+  eq syncCurLeader(empty, ID) = empty .
+  eq syncCurLeader((proc[ID0]: initiator) (curLeader[ID0]: ID1) S, ID) =
+    (proc[ID0]: normal) (curLeader[ID0]: ID) syncCurLeader(S, ID) .
+  eq syncCurLeader((proc[ID0]: normal) (curLeader[ID0]: ID1) S, ID) =
+    (proc[ID0]: normal) (curLeader[ID0]: ID) syncCurLeader(S, ID) .
+  eq syncCurLeader(S0 S1, ID) = S0 syncCurLeader(S1, ID) [owise] .
+
+***(
+  op syncCurLeader : Soup{OComp} Nat Set{Nat} -> Soup{OComp} .
+  eq syncCurLeader(empty, ID, IDS) = empty .
+  eq syncCurLeader(S, ID, empty) = S .
+  eq syncCurLeader((curLeader[ID0]: ID1) S, ID, IDS) = 
+    if ID0 in IDS then (curLeader[ID0]: ID) syncCurLeader(S, ID, IDS) 
+    else (curLeader[ID0]: ID1) syncCurLeader(S, ID, IDS) fi .
+  eq syncCurLeader((proc[ID0]: initiator) S, ID, IDS) =
+    (proc[ID0]: normal) syncCurLeader(S, ID, IDS) .
+  eq syncCurLeader(S0 S1, ID, IDS) = S0 syncCurLeader(S1, ID, IDS) [owise] .
+)
+
+***(
+  rl [become-failed-leader] :
+    {(proc[ID]: leader) (network: empty) (tran: E) S} => {(proc[ID]: failedLeader) (network: empty) (tran: bfl(ID)) S} .
+)
+
+  rl [become-failed-leader] :
+    {(proc[ID]: leader) (tran: E) S} => {(proc[ID]: failedLeader) (tran: bfl(ID)) S} .
+
+  rl [become-initiator] :
+    {(proc[ID]: normal) (proc[LID]: failedLeader) (curLeader[ID]: LID) 
+     (sndElectionMsgCnt[ID]: SEC) (rcvOkMsgCnt[ID]: ROC) (rcvTimeoutMsgCnt[ID]: RTC) (tran: E) S} =>
+    {(proc[ID]: initiator) (proc[LID]: failedLeader) (curLeader[ID]: LID)
+     (sndElectionMsgCnt[ID]: 0) (rcvOkMsgCnt[ID]: 0) (rcvTimeoutMsgCnt[ID]: 0) (tran: bi(ID)) S} .
+
+  crl [start-election] :
+    {(proc[ID]: initiator) (sndElectionMsgCnt[ID]: SEC) (procIds: IDS) (network: NW) (tran: E) S} =>
+    {(proc[ID]: initiator) (sndElectionMsgCnt[ID]: | biggerThanIds(ID, IDS) |) (procIds: IDS)
+     (network: (sndElectionMsgs(ID, biggerThanIds(ID, IDS)) NW)) (tran: se(ID)) S}
+    if SEC == 0 .
+
+  crl [normal-execution-election] :
+    {(proc[ID0]: normal) (proc[LID]: failedLeader) (curLeader[ID0]: LID)
+     (sndElectionMsgCnt[ID0]: SEC) (rcvOkMsgCnt[ID0]: ROC) (rcvTimeoutMsgCnt[ID0]: RTC)
+     (network: (message(ID1, ID0, election) NW)) (tran: E) S} =>
+    {(proc[ID0]: initiator) (proc[LID]: failedLeader) (curLeader[ID0]: LID)
+     (sndElectionMsgCnt[ID0]: 0) (rcvOkMsgCnt[ID0]: 0) (rcvTimeoutMsgCnt[ID0]: 0)
+     (network: (sndOkMsg(ID0, ID1) NW)) (tran: nee(ID0)) S}
+    if ID0 > ID1 .
+
+***(
+  crl [normal-ignore-election] :
+    {(proc[ID0]: normal) (curLeader[ID0]: LID) (proc[LID]: leader)
+     (network: (message(ID1, ID0, election) NW)) (tran: E) S} =>
+    {(proc[ID0]: normal) (curLeader[ID0]: LID) (proc[LID]: leader)
+     (network: NW) (tran: nie(ID0)) S}
+    if ID0 > ID1 .
+)
+
+  crl [election-timeout] :
+    {(proc[ID0]: failedLeader) (network: (message(ID1, ID0, election) NW)) (tran: E) S} =>
+    {(proc[ID0]: failedLeader) (network: (sndTimeoutMsg(ID0, ID1) NW)) (tran: et(ID0)) S}
+    if ID0 > ID1 .
+  
+  crl [initiator-execution-election] :
+    {(proc[ID0]: initiator) (network: (message(ID1, ID0, election) NW)) (tran: E) S} =>
+    {(proc[ID0]: initiator) (network: (sndOkMsg(ID0, ID1) NW)) (tran: iee(ID0)) S}
+    if ID0 > ID1 .
+
+  crl [initiator-execution-ok] :
+    {(proc[ID0]: initiator) (rcvOkMsgCnt[ID0]: ROC) (network: (message(ID1, ID0, ok) NW)) (tran: E) S} =>
+    {(proc[ID0]: initiator) (rcvOkMsgCnt[ID0]: ROC + 1) (network: NW) (tran: ieo(ID0)) S}
+    if ID0 < ID1 .
+
+  crl [initiator-execution-timeout] :
+    {(proc[ID0]: initiator) (rcvTimeoutMsgCnt[ID0]: RTC) (network: (message(ID1, ID0, timeout) NW)) (tran: E) S} =>
+    {(proc[ID0]: initiator) (rcvTimeoutMsgCnt[ID0]: RTC + 1) (network: NW) (tran: iet(ID0)) S}
+    if ID0 < ID1 .
+
+  crl [initiator-become-normal] :
+    {(proc[ID0]: initiator) (sndElectionMsgCnt[ID0]: SEC)
+     (rcvOkMsgCnt[ID0]: ROC) (rcvTimeoutMsgCnt[ID0]: RTC) (tran: E) S} =>
+    {(proc[ID0]: normal) (sndElectionMsgCnt[ID0]: 0)
+     (rcvOkMsgCnt[ID0]: 0) (rcvTimeoutMsgCnt[ID0]: 0) (tran: ibn(ID0)) S}
+    if SEC > 0 and SEC == (ROC + RTC) and ROC > 0 .
+
+  crl [initiator-become-leader] :
+    {(proc[ID0]: initiator) (curLeader[ID0]: ID1)
+     (sndElectionMsgCnt[ID0]: SEC) (rcvTimeoutMsgCnt[ID0]: RTC) (rcvOkMsgCnt[ID0]: ROC)
+     (procIds: IDS) (network: empty) (tran: E) S} =>
+    {(proc[ID0]: leader) (curLeader[ID0]: ID0)
+     (sndElectionMsgCnt[ID0]: 0) (rcvTimeoutMsgCnt[ID0]: 0) (rcvOkMsgCnt[ID0]: 0)
+     (procIds: IDS) (network: empty) (tran: ibl(ID0)) syncCurLeader(S, ID0)}
+    if SEC > 0 and SEC == RTC and ROC == 0 .
+endm
+
+in model-checker .
+
+mod BULLY-PREDS is
+  pr BULLY .
+  inc SATISFACTION .
+  subsort BState < State .
+
+  --- vars ID : Nat .
+  --- var E : LabeledEvent .
+  --- var S : Soup{OComp} .
+
+  vars S S0 S1 : Soup{OComp} .
+  vars ID LID ID0 ID1 : Nat .
+  vars SEC ROC RTC : Nat .
+  var IDS : Set{Nat} .
+  var NW : Soup{Message} .
+  var E : LabeledEvent .
+
+  var PROP : Prop .
+  op leader : Nat -> Prop .
+  op initiator : Nat -> Prop .
+  op applied : LabeledEvent -> Prop .
+  eq {(proc[ID]: leader) S} |= leader(ID) = true .
+  eq {(proc[ID]: initiator) S} |= initiator(ID) = true .
+  eq {(tran: E) S} |= applied(E) = true .
+  eq {S} |= PROP = false [owise] .
+endm
+
+mod BULLY-CHECK is
+  inc BULLY-PREDS .
+  inc MODEL-CHECKER .
+  inc LTL-SIMPLIFIER .
+  op leaderLiveness3-2  : -> Formula .
+  ops leaderLiveness2 leaderLiveness3 leaderLiveness4 leaderLiveness5 leaderLiveness6 : -> Formula .
+  ops afair2 afair3 afair4 afair5 afair6 : -> Formula .
+  eq leaderLiveness2 = (initiator(0) \/ initiator(1)) |-> (leader(0) \/ leader(1)) .
+  eq afair2 = (~ [] <> applied(bi(0))) /\ (~ [] <> applied(bi(1))) .
+  eq leaderLiveness3 = (initiator(0) \/ initiator(1) \/ initiator(2))
+                                        |-> (leader(0) \/ leader(1) \/ leader(2)) .
+  eq leaderLiveness3-2 = (~ leader(0) /\ ~ leader(1) /\ ~ leader(2))
+                                        |-> (leader(0) \/ leader(1) \/ leader(2)) .
+  eq afair3 = (~ [] <> applied(bi(0))) /\ (~ [] <> applied(bi(1))) /\ (~ [] <> applied(bi(2))) .
+  eq leaderLiveness4 = (initiator(0) \/ initiator(1) \/ initiator(2) \/ initiator(3))
+                                        |-> (leader(0) \/ leader(1) \/ leader(2) \/ leader(3)) .
+  eq afair4 = (~ [] <> applied(bi(0))) /\ (~ [] <> applied(bi(1))) /\ (~ [] <> applied(bi(2))) /\ 
+                       (~ [] <> applied(bi(3))) .
+  eq leaderLiveness5 = (initiator(0) \/ initiator(1) \/ initiator(2) \/ initiator(3) \/ initiator(4))
+                                        |-> (leader(0) \/ leader(1) \/ leader(2) \/ leader(3) \/ leader(4)) .
+  eq afair5 = (~ [] <> applied(bi(0))) /\ (~ [] <> applied(bi(1))) /\ (~ [] <> applied(bi(2))) /\ 
+                       (~ [] <> applied(bi(3))) /\ (~ [] <> applied(bi(4))) .
+  eq leaderLiveness6 = (initiator(0) \/ initiator(1) \/ initiator(2) \/ initiator(3) \/ initiator(4) \/ initiator(5))
+                                        |-> (leader(0) \/ leader(1) \/ leader(2) \/ leader(3) \/ leader(4) \/ leader(5)) .
+  eq afair6 = (~ [] <> applied(bi(0))) /\ (~ [] <> applied(bi(1))) /\ (~ [] <> applied(bi(2))) /\ 
+                       (~ [] <> applied(bi(3))) /\ (~ [] <> applied(bi(4))) /\ (~ [] <> applied(bi(5))) .
+endm
+
+search [1] in BULLY : init2 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init2, afair2 -> leaderLiveness2) .
+
+search [1] in BULLY : init3 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init3, afair3 -> leaderLiveness3) .
+
+--- red in BULLY-CHECK : modelCheck(init3, afair3 -> leaderLiveness3-2) .
+
+search [1] in BULLY : init4 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init4, afair4 -> leaderLiveness4) .
+
+search [1] in BULLY : init5 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init5, afair5 -> leaderLiveness5) .
+
+search [1] in BULLY : init6 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init6, afair6 -> leaderLiveness6) .
+
+
+eof
+
+
+search [1] in BULLY : init4 =>* {(network: (message(0,1,election) message(0,1,election) message(0,1,election) NW)) S} .
+
+search [1] in BULLY : init2 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init2, afair2 -> leaderLiveness2) .
+
+search [1] in BULLY : init3 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init3, afair3 -> leaderLiveness3) .
+
+red in BULLY-CHECK : modelCheck(init3, afair3 -> leaderLiveness3-2) .
+
+search [1] in BULLY : init4 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init4, afair4 -> leaderLiveness4) .
+
+search [1] in BULLY : init5 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init5, afair5 -> leaderLiveness5) .
+
+search [1] in BULLY : init6 =>* {(proc[ID0]: leader) (proc[ID1]: leader) S} .
+red in BULLY-CHECK : modelCheck(init6, afair6 -> leaderLiveness6) .
+
+
